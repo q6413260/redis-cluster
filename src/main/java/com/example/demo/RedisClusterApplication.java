@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.example.demo.util.ZkPathConstants;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -16,30 +17,44 @@ import java.util.Set;
 @SpringBootApplication
 public class RedisClusterApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(RedisClusterApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(RedisClusterApplication.class, args);
+    }
 
-	@Bean
-	public CuratorFramework curatorClient() {
-		RetryPolicy  retryPolicy = new ExponentialBackoffRetry(1000, 3);
-		CuratorFramework curatorClient = CuratorFrameworkFactory.newClient("localhost:2181", retryPolicy);
-		curatorClient.start();
-		try {
-			if (!curatorClient.getZookeeperClient().blockUntilConnectedOrTimedOut()) {
-				curatorClient.getZookeeperClient().getZooKeeper();
-			}
-		} catch (Exception e) {
-			// close the client to release resource
-			curatorClient.close();
-		}
-		return curatorClient;
-	}
+    @Bean
+    public CuratorFramework curatorClient() {
+        RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+        CuratorFramework curatorClient = CuratorFrameworkFactory.newClient("localhost:2181", retryPolicy);
+        curatorClient.start();
+        try {
+            if (!curatorClient.getZookeeperClient().blockUntilConnectedOrTimedOut()) {
+                curatorClient.getZookeeperClient().getZooKeeper();
+            }
+        } catch (Exception e) {
+            // close the client to release resource
+            curatorClient.close();
+        }
+        return curatorClient;
+    }
 
-//	@Bean
-//	public BinaryJedisCluster redisClient(){
-//		Set<HostAndPort> set = new HashSet<>();
-//		HostAndPort h1 = new HostAndPort()
-//		BinaryJedisCluster
-//	}
+    @Bean
+    public BinaryJedisCluster redisClient() {
+        Set<HostAndPort> set = new HashSet<>();
+        try {
+            String serverAddress = new String(
+                    curatorClient().getData().forPath(ZkPathConstants.REDIS_SERVER_ADDRESS_PATH));
+            String[] addressArray = serverAddress.split(",");
+            for (String address : addressArray) {
+                String host = address.split(":")[0];
+                int port = Integer.parseInt(address.split(":")[1]);
+                HostAndPort hostAndPort = new HostAndPort(host, port);
+                set.add(hostAndPort);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        BinaryJedisCluster binaryJedisCluster = new BinaryJedisCluster(set);
+		return binaryJedisCluster;
+    }
 }
