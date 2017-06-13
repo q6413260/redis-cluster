@@ -3,7 +3,6 @@ package com.example.demo.listerer;
 import com.example.demo.util.ZkPathConstants;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.NodeCache;
-import org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.BinaryJedisCluster;
@@ -22,9 +21,10 @@ public class RedisServerAddressChangeListerer {
     private BinaryJedisCluster redisClient;
 
     @PostConstruct
-    public void init() {
+    public void init() throws Exception {
         final NodeCache nodeCache = new NodeCache(curatorClient, ZkPathConstants.REDIS_TEST, false);
         nodeCache.getListenable()
                 .addListener(() -> System.out.println(new String(nodeCache.getCurrentData().getData())));
+        nodeCache.start();
     }
 }
