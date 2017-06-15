@@ -1,6 +1,5 @@
 package com.example.demo;
 
-import com.example.demo.util.ZkPathConstants;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -8,11 +7,6 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import redis.clients.jedis.BinaryJedisCluster;
-import redis.clients.jedis.HostAndPort;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @SpringBootApplication
 public class RedisClusterApplication {
@@ -35,26 +29,5 @@ public class RedisClusterApplication {
             curatorClient.close();
         }
         return curatorClient;
-    }
-
-    @Bean
-    public BinaryJedisCluster redisClient() {
-        Set<HostAndPort> set = new HashSet<>();
-        try {
-            String serverAddress = new String(
-                    curatorClient().getData().forPath(ZkPathConstants.REDIS_SERVER_ADDRESS_PATH));
-            String[] addressArray = serverAddress.split(",");
-            for (String address : addressArray) {
-                String host = address.split(":")[0];
-                int port = Integer.parseInt(address.split(":")[1]);
-                HostAndPort hostAndPort = new HostAndPort(host, port);
-                set.add(hostAndPort);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        BinaryJedisCluster binaryJedisCluster = new BinaryJedisCluster(set);
-		return binaryJedisCluster;
     }
 }

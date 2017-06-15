@@ -1,8 +1,7 @@
 package com.example.demo.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.demo.redis.RedisClientManager;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import redis.clients.jedis.BinaryJedisCluster;
 import redis.clients.jedis.HostAndPort;
@@ -15,12 +14,21 @@ import java.util.Set;
  */
 @RestController
 public class TestController {
-    @Autowired
-    private BinaryJedisCluster redisClient;
 
-    @RequestMapping(value = "/set")
-    public String set(@RequestParam("key")String key, @RequestParam("value")String value){
-        redisClient.set(key.getBytes(), value.getBytes());
+    @RequestMapping(value = "/")
+    public String set(){
+        new Thread(() -> {
+            BinaryJedisCluster redisClient = RedisClientManager.getInstance().getRedisClient();
+            for(int i=0; ; i++){
+                String key = "foo" + i;
+                redisClient.set(key.getBytes(), String.valueOf(i).getBytes());
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
         return "success";
     }
 
